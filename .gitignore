@@ -1,5 +1,5 @@
 gocode.iml
 main
 golang.org/*
-src/golang.org
+golang.org
 pkg/*
