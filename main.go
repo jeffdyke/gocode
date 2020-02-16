@@ -1,60 +1,45 @@
 package main
 
 import (
+	"flag"
 	"github.com/jeffdyke/jssh"
 	"golang.org/x/crypto/ssh"
 	"log"
-	"flag"
 	"os/user"
+	"strings"
 )
 
-func connect(ci jssh.ConnectionInfo, bastion string, cmds string) (*ssh.Client, error) {
-	var conn = jssh.BastionConnectInfo{
-		ConnectionInfo: ci,
-		Bastion: bastion,
-	}
-	return conn.Connect()
-
-}
-
-func parseArgs(u string, h, string, b string) *ssh.Client {
-	var auth jssh.ConnectionInfo
-	if b != "" {
-		var auth = jssh.BastionConnectInfo{
-			ConnectionInfo: jssh.ConnectionInfo{User: u, Host: h},
-			Bastion:        b,
-		}
-		auth.Connect()
-	} else {
-		var auth = jssh.PublicKeyConnection{ConnectionInfo: jssh.ConnectionInfo{User: u, Host: h}
-		auth.connect()
-	}
 
 
-}
 func main() {
 	var u, _ = user.Current()
 	var usr = flag.String("user", u.Username, "Defaults to your login name" )
-	var host = flag.String("host", "fuckyou.foo.com", "Required must specify host, if using bastion see that help")
+	var host = flag.String("host", "", "Required must specify host, if using bastion see that help")
 	var bastion = flag.String("bastion", "", "Required if host")
+
 	flag.Parse()
-	var connObj =
+	var sClient *ssh.Client
+	var err  error
 
-	if *bastion != "" {
-		log.Printf("Using %v to run command on %v", bastion, host)
-		bastion()
+	if *bastion != ""  && *host != "" {
+		if strings.EqualFold(*bastion, *host) {
+			log.Fatalf("-host(%v) and -bastion(%v) can not be the same", *host, *bastion)
+		}
+		log.Printf("Using %v to run command on %v", *bastion, *host)
+		sClient, err = jssh.BastionConnect(*usr, *host, *bastion)
+	} else if *host != "" {
+		sClient, err = jssh.PublicKeyConnect(*usr, *host)
 	} else {
-		var conn = jssh.PublicKeyConnection{ConnectionInfo:jssh.ConnectionInfo{User: *usr, Host: *host}}
+		log.Fatal("Usage go main.go -host [-user] -bastion")
 	}
 
-	if conn != nil {
-		log.Panicf("what the fuck is %v", e)
+
+	if err != nil {
+		log.Panicf("what the fuck is %v", err)
 	}
-	c, e := conn.Connect()
-	if e != nil {
-		log.Panicf("what the fuck is %v", e)
-	}
-	result := jssh.RunCommand(*c, "ls -la")
+
+	cmds := []string{"pwd", "cd /tmp", "ls", "echo I'm out"}
+	result := jssh.RunCommand(*sClient, cmds)
 	log.Printf("home dir from staging %v\n", result)
 }
 
