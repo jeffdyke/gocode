@@ -40,11 +40,10 @@ func clientAuth(usr string, auth ssh.AuthMethod) *ssh.ClientConfig {
 	return config
 }
 
-func RunCommand(client ssh.Client, cmds []string) string {
+func RunCommands(client ssh.Client, cmds []string) string {
 
 
 	var out bytes.Buffer
-
 
 	for _, cmd := range cmds {
 		sess, e := client.NewSession()
@@ -61,7 +60,6 @@ func RunCommand(client ssh.Client, cmds []string) string {
 	}
 
 	result := out.String()
-	log.Printf("StdOut %v", result)
 
 	return result
 }
@@ -74,10 +72,8 @@ type ConnectionInfo struct {
 	Host string
 
 }
-type PublicKeyConnection struct {
-	User string
-	Host string
-}
+type PublicKeyConnection = ConnectionInfo
+
 
 type BastionConnectInfo struct {
 	c ConnectionInfo

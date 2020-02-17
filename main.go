@@ -39,7 +39,7 @@ func main() {
 	}
 
 	cmds := []string{"pwd", "pwd", "hostname", "echo 'You'"}
-	result := jssh.RunCommand(*sClient, cmds)
+	result := jssh.RunCommands(*sClient, cmds)
 	log.Printf("home dir from staging %v\n", result)
 }
 
