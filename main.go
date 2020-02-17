@@ -38,7 +38,7 @@ func main() {
 		log.Panicf("what the fuck is %v", err)
 	}
 
-	cmds := []string{"pwd", "pwd", "hostname", "echo 'You'"}
+	cmds := []string{"pwd", "whoami", "hostname", "echo 'GO Go!'"}
 	result := _ssh.RunCommands(*sClient, cmds)
 	log.Printf("home dir from staging %v\n", result)
 }
