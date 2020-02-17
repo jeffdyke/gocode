@@ -13,10 +13,12 @@ import (
 	"os/user"
 )
 
-const TCP  = "tcp"
-const PORT = "22"
-const SOCKET = "SSH_AUTH_SOCK"
-const UNIX = "unix"
+const (
+	TCP  = "tcp"
+	PORT = "22"
+	SOCKET = "SSH_AUTH_SOCK"
+	UNIX = "unix"
+)
 
 
 func sshAgentConnect() agent.ExtendedAgent {
@@ -66,24 +68,22 @@ func RunCommands(client ssh.Client, cmds []string) string {
 func formatHost(host string) string {
 	return fmt.Sprintf("%s:%s", host, PORT)
 }
-
-type ConnectionInfo struct {
+/* This will be changed as there is no need for Bastion to `extend` PublicKey */
+type PublicKeyConnection struct {
 	User string
 	Host string
-
 }
-type PublicKeyConnection = ConnectionInfo
 
 
 type BastionConnectInfo struct {
-	c ConnectionInfo
+	c PublicKeyConnection
 	Bastion string
 
 }
 
 func BastionConnect(usr string, host string, bastion string)  (client *ssh.Client, err error){
 	var conn = BastionConnectInfo{
-		c: ConnectionInfo{User: usr, Host: host},
+		c: PublicKeyConnection{User: usr, Host: host},
 		Bastion: bastion,
 	}
 	return conn.Connect()

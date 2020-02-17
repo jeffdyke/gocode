@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	_aws "github.com/jeffdyke/aws"
 	_ssh "github.com/jeffdyke/ssh"
 	"golang.org/x/crypto/ssh"
 	"log"
@@ -14,7 +13,6 @@ import (
 
 func main() {
 	var u, _ = user.Current()
-	var b = flag.String("bucket", "", "Bucket to List")
 	var usr = flag.String("user", u.Username, "Defaults to your login name" )
 	var host = flag.String("host", "", "Required must specify host, if using bastion see that help")
 	var bastion = flag.String("bastion", "", "Required if host")
@@ -22,10 +20,7 @@ func main() {
 	flag.Parse()
 	var sClient *ssh.Client
 	var err  error
-	if *b != "" {
-		_aws.Client()
-		return
-	}
+
 	if *bastion != ""  && *host != "" {
 		if strings.EqualFold(*bastion, *host) {
 			log.Fatalf("-host(%v) and -bastion(%v) can not be the same", *host, *bastion)
