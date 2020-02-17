@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/jeffdyke/jssh"
+	_aws "github.com/jeffdyke/aws"
+	_ssh "github.com/jeffdyke/ssh"
 	"golang.org/x/crypto/ssh"
 	"log"
 	"os/user"
@@ -13,6 +14,7 @@ import (
 
 func main() {
 	var u, _ = user.Current()
+	var b = flag.String("bucket", "", "Bucket to List")
 	var usr = flag.String("user", u.Username, "Defaults to your login name" )
 	var host = flag.String("host", "", "Required must specify host, if using bastion see that help")
 	var bastion = flag.String("bastion", "", "Required if host")
@@ -20,17 +22,20 @@ func main() {
 	flag.Parse()
 	var sClient *ssh.Client
 	var err  error
-
+	if *b != "" {
+		_aws.Client()
+		return
+	}
 	if *bastion != ""  && *host != "" {
 		if strings.EqualFold(*bastion, *host) {
 			log.Fatalf("-host(%v) and -bastion(%v) can not be the same", *host, *bastion)
 		}
 		log.Printf("Using %v to run command on %v", *bastion, *host)
-		sClient, err = jssh.BastionConnect(*usr, *host, *bastion)
+		sClient, err = _ssh.BastionConnect(*usr, *host, *bastion)
 	} else if *host != "" {
-		sClient, err = jssh.PublicKeyConnect(*usr, *host)
+		sClient, err = _ssh.PublicKeyConnect(*usr, *host)
 	} else {
-		log.Fatal("Usage go main.go -host [-user] -bastion")
+		log.Fatal("Usage go aws.go -host [-user] -bastion")
 	}
 
 
@@ -39,7 +44,7 @@ func main() {
 	}
 
 	cmds := []string{"pwd", "pwd", "hostname", "echo 'You'"}
-	result := jssh.RunCommands(*sClient, cmds)
+	result := _ssh.RunCommands(*sClient, cmds)
 	log.Printf("home dir from staging %v\n", result)
 }
 
