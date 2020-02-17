@@ -38,7 +38,7 @@ func main() {
 		log.Panicf("what the fuck is %v", err)
 	}
 
-	cmds := []string{"pwd", "cd /tmp", "ls", "echo I'm out"}
+	cmds := []string{"pwd", "pwd", "hostname", "echo 'You'"}
 	result := jssh.RunCommand(*sClient, cmds)
 	log.Printf("home dir from staging %v\n", result)
 }

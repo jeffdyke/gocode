@@ -41,35 +41,29 @@ func clientAuth(usr string, auth ssh.AuthMethod) *ssh.ClientConfig {
 }
 
 func RunCommand(client ssh.Client, cmds []string) string {
-	var e error
-	sess, e := client.NewSession()
-	if e != nil {
-		log.Fatalf("Could not create new Session %v", e)
-	}
-	defer sess.Close()
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	sess.Stdout = &stdout
-	sess.Stderr = &stderr
 
-	stdin, err := sess.StdinPipe()
-	if err != nil {
-		log.Fatalf("Failed to open StdInPipe. %v ",err)
-	}
-	e = sess.Shell()
-	if e != nil {
-		log.Fatalf("Failed to create shell.  %v", e)
-	}
+
+	var out bytes.Buffer
+
+
 	for _, cmd := range cmds {
-		log.Printf("Running %v", cmd)
-		_, e = fmt.Fprintf(stdin, "%s\n", cmd)
+		sess, e := client.NewSession()
 		if e != nil {
-			log.Printf("Failed to run %s. Error: %v", cmd, e)
+			log.Fatalf("Could not create new Session %v", e)
 		}
+		log.Printf("Running %v", cmd)
+		stdo , e := sess.Output(cmd)
+		_, e = out.Write(stdo)
+		if e != nil {
+			fmt.Printf("Failed to run %s. Error: %v", cmd, e)
+		}
+		sess.Close()
 	}
-	log.Printf("StdOut %v", stdout.String())
-	log.Printf("StdErr %v", stderr.String())
-	return fmt.Sprintf("%v completed", cmds)
+
+	result := out.String()
+	log.Printf("StdOut %v", result)
+
+	return result
 }
 func formatHost(host string) string {
 	return fmt.Sprintf("%s:%s", host, PORT)
@@ -81,47 +75,48 @@ type ConnectionInfo struct {
 
 }
 type PublicKeyConnection struct {
-	ConnectionInfo
+	User string
+	Host string
 }
 
 type BastionConnectInfo struct {
-	ConnectionInfo
+	c ConnectionInfo
 	Bastion string
 
 }
 
 func BastionConnect(usr string, host string, bastion string)  (client *ssh.Client, err error){
 	var conn = BastionConnectInfo{
-		ConnectionInfo: ConnectionInfo{User: usr, Host: host},
+		c: ConnectionInfo{User: usr, Host: host},
 		Bastion: bastion,
 	}
 	return conn.Connect()
 }
 
 func PublicKeyConnect(usr string, host string) (*ssh.Client, error) {
-	var conn = PublicKeyConnection{ConnectionInfo:ConnectionInfo{User: usr, Host: host}}
+	var conn = PublicKeyConnection{User: usr, Host: host}
 	return conn.Connect()
 }
 
 
-func (info *BastionConnectInfo) Connect() (*ssh.Client, error) {
+func (ci *BastionConnectInfo) Connect() (*ssh.Client, error) {
 	var localAgent = sshAgentConnect()
-	_ = clientAuth(info.User, ssh.PublicKeysCallback(localAgent.Signers))
+	_ = clientAuth(ci.c.User, ssh.PublicKeysCallback(localAgent.Signers))
 	var sshAgent = sshAgentConnect()
-	var config = clientAuth(info.User, ssh.PublicKeysCallback(sshAgent.Signers))
-	sshc, err := ssh.Dial(TCP, formatHost(info.Bastion), config)
+	var config = clientAuth(ci.c.User, ssh.PublicKeysCallback(sshAgent.Signers))
+	sshc, err := ssh.Dial(TCP, formatHost(ci.Bastion), config)
 	if err != nil {
-		log.Fatalf("Failed to connect to Bastion host %v\nError: %v", info.Bastion, err)
+		log.Fatalf("Failed to connect to Bastion host %v\nError: %v", ci.Bastion, err)
 		return nil, err
 	}
-	lanConn, err := sshc.Dial(TCP, formatHost(info.Host))
+	lanConn, err := sshc.Dial(TCP, formatHost(ci.c.Host))
 	if err != nil {
-		log.Fatalf("Failed to connect to %v\nError: %v", info.Host, err)
+		log.Fatalf("Failed to connect to %v\nError: %v", ci.c.Host, err)
 		return nil, err
 	}
-	ncc, chans, reqs, err := ssh.NewClientConn(lanConn, formatHost(info.Host), config)
+	ncc, chans, reqs, err := ssh.NewClientConn(lanConn, formatHost(ci.c.Host), config)
 	if err != nil {
-		fmt.Printf("got error trying to get new client connection %v\n -- %v\n", formatHost(info.Host), err)
+		fmt.Printf("got error trying to get new client connection %v\n -- %v\n", formatHost(ci.c.Host), err)
 		return nil, err
 	}
 
@@ -138,9 +133,6 @@ func (info PublicKeyConnection) Connect() (*ssh.Client, error)  {
 		return nil, err
 	}
 	var config = clientAuth(info.User, ssh.PublicKeys(signer))
-
 	client, err := ssh.Dial(TCP, formatHost(info.Host), config)
-
 	return client, err
-
 }
