@@ -9,7 +9,7 @@ import (
 const (
 	DEFAULTREGION = "us-east-1"
 )
-
+// silly silly silly, just making sure everything is installed in a separate path
 func Client() {
 	sess := EnvSession()
 
