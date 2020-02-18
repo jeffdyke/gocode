@@ -96,8 +96,6 @@ func PublicKeyConnect(usr string, host string) (*ssh.Client, error) {
 
 
 func (ci *BastionConnectInfo) Connect() (*ssh.Client, error) {
-	var localAgent = sshAgentConnect()
-	_ = clientAuth(ci.c.User, ssh.PublicKeysCallback(localAgent.Signers))
 	var sshAgent = sshAgentConnect()
 	var config = clientAuth(ci.c.User, ssh.PublicKeysCallback(sshAgent.Signers))
 	sshc, err := ssh.Dial(TCP, formatHost(ci.Bastion), config)

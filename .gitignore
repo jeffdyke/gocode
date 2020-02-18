@@ -3,3 +3,4 @@ main
 golang.org/*
 golang.org
 pkg/*
+.idea
